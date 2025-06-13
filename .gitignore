@@ -1,0 +1,75 @@
+# Gradle files
+.gradle/
+build/
+*/build/
+
+# Gradle Wrapper (keep gradlew and gradlew.bat)
+# gradle-wrapper.properties is usually committed
+
+# Log files
+*.log
+
+# PID files
+*.pid
+.running.pid
+
+# Kotlin/JS artifacts
+kotlin-js-store/
+.kotlin/
+
+# WebAssembly build artifacts
+*.wasm
+*.js.map
+
+# Java/Kotlin compiled artifacts
+*.class
+*.jar
+*.war
+
+# Temporary files
+*.tmp
+*.cache
+*.swp
+*.swo
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules and package locks
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Environment and local configuration
+.env
+.env.local
+.env.*.local
+local.properties
+
+# Test results
+/test-results/
+/coverage/
+
+# Miscellaneous
+*.tgz
+*.tar.gz
+.vscode-test
