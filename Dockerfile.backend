@@ -1,0 +1,34 @@
+# Multi-stage Dockerfile for Kotlin Backend
+FROM gradle:8.12-jdk17 AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy gradle configuration files
+COPY gradle/ gradle/
+COPY gradlew gradlew.bat gradle.properties settings.gradle.kts build.gradle.kts ./
+
+# Copy source code for shared and backend modules
+COPY shared/ shared/
+COPY backend/ backend/
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Build the backend distribution
+RUN ./gradlew :backend:installDist --no-daemon
+
+# Production stage
+FROM eclipse-temurin:17-jre
+
+# Set working directory
+WORKDIR /app
+
+# Copy the built distribution
+COPY --from=build /app/backend/build/install/backend/ ./
+
+# Expose backend port
+EXPOSE 8081
+
+# Run the application
+CMD ["./bin/backend"] 

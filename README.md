@@ -109,6 +109,61 @@ This project is a Kotlin Multiplatform (KMP) application that demonstrates the i
 
 ---
 
+## 🐳 Docker Configuration
+
+### Container Architecture
+
+This project includes full Docker containerization with multi-stage builds and production optimization:
+
+- **Frontend Container**: nginx-alpine serving Kotlin/Wasm with proper WASM MIME types
+- **Backend Container**: JRE runtime serving Ktor REST API
+- **Orchestration**: Docker Compose for service coordination
+
+### Docker Files
+
+#### `Dockerfile.frontend`
+```dockerfile
+# Multi-stage build: Gradle build → nginx serve
+FROM gradle:8.12-jdk17 AS build
+# ... build stage ...
+
+FROM nginx:alpine
+# ... production serve with WASM support ...
+```
+
+#### `Dockerfile.backend`
+```dockerfile
+# Multi-stage build: Gradle build → JRE runtime
+FROM gradle:8.12-jdk17 AS build
+# ... build stage ...
+
+FROM eclipse-temurin:17-jre
+# ... optimized runtime ...
+```
+
+#### `docker-compose.yml`
+```yaml
+services:
+  frontend:
+    build: ./frontend
+    ports: ["8080:80"]
+  backend:
+    build: ./backend
+    ports: ["8081:8081"]
+    environment:
+      - KTOR_PORT=8081
+```
+
+### Key Features
+
+- **Multi-stage builds** for minimal production images
+- **WASM MIME type** configuration for proper WebAssembly serving
+- **Health checks** and container monitoring
+- **Optimized nginx** configuration with caching
+- **Build optimization** with `.dockerignore`
+
+---
+
 ## API Endpoints
 
 ### Backend REST API (Port 8081)
@@ -139,13 +194,17 @@ kmm-rest-web-app/
 ├── build.gradle.kts          # Root build configuration
 ├── settings.gradle.kts       # Module inclusion & project settings
 ├── gradle.properties         # Gradle configuration properties
-├── start.sh                  # ✅ Start both frontend and backend
-├── stop.sh                   # ✅ Stop all services
+├── start.sh                  # ✅ Start both frontend and backend locally
+├── stop.sh                   # ✅ Stop all local services
+├── docker-compose.yml        # ✅ Docker orchestration configuration
+├── .dockerignore            # ✅ Docker build optimization
 ├── gradle/
 │   └── libs.versions.toml    # Version catalog (dependencies & plugins)
 ├── shared/                   # ✅ KMP shared module (COMPLETE)
 ├── frontend/                 # ✅ KMP frontend module (Wasm target) - COMPLETE
+│   └── Dockerfile.frontend   # ✅ Frontend container configuration
 └── backend/                  # ✅ Pure JVM backend module (COMPLETE)
+    └── Dockerfile.backend    # ✅ Backend container configuration
 ```
 
 ### 🔄 Shared Module (`shared/`) ✅ **COMPLETE**
@@ -215,7 +274,26 @@ backend/
 
 ## Running the Application ✅ **FULLY OPERATIONAL**
 
-### Quick Start
+### 🐳 Docker Setup (Recommended)
+
+The easiest way to run the application is using Docker containers:
+
+```bash
+# Build and start both frontend and backend containers
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop containers
+docker-compose down
+```
+
+**Services:**
+- **Frontend**: http://localhost:8080 (Kotlin/Wasm + nginx)
+- **Backend**: http://localhost:8081 (Kotlin/JVM + Ktor)
+
+### 🔧 Local Development Setup
 
 ```bash
 # Start everything (recommended)
@@ -273,6 +351,8 @@ backend/
 - **Ktor**: 3.0.3 ✅ **Working** (REST API server)
 - **Kotlinx Serialization**: Latest stable ✅ **Working** (JSON serialization)
 - **Material3**: Latest stable ✅ **Working** (UI design system)
+- **Docker**: ✅ **Complete** (containerized deployment)
+- **nginx**: Alpine ✅ **Working** (frontend web server)
 - **Target**: Kotlin/Wasm (`wasm-js`) for frontend, JVM for backend
 
 ---
@@ -303,11 +383,34 @@ backend/
 - Graceful server shutdown
 - Configurable ports and settings
 
+### 🐳 **Container Support**
+- Multi-stage Docker builds for optimized images
+- Production-ready nginx configuration
+- Proper WASM MIME type handling
+- Container orchestration with Docker Compose
+- Health checks and container monitoring
+
 ---
 
 ## Development Workflow
 
-### 🔧 **Daily Development**
+### 🐳 **Container Development (Recommended)**
+```bash
+# Start containerized environment
+docker-compose up --build -d
+
+# View live logs
+docker-compose logs -f
+
+# Restart specific service
+docker-compose restart frontend
+docker-compose restart backend
+
+# Stop containers
+docker-compose down
+```
+
+### 🔧 **Local Development**
 ```bash
 # Start development environment
 ./start.sh
@@ -331,11 +434,33 @@ curl http://localhost:8081/api/dummy-data
 
 ### 📦 **Production Build**
 ```bash
-# Build optimized production bundles
+# Docker production build (recommended)
+docker-compose up --build -d
+
+# Local production build
 ./gradlew build
 
 # Frontend bundle: frontend/build/dist/wasmJs/productionExecutable/
 # Backend JAR: backend/build/libs/backend.jar
+```
+
+### 🐳 **Docker Commands**
+```bash
+# Build images only
+docker-compose build
+
+# Start in foreground (see logs)
+docker-compose up --build
+
+# Check container status
+docker-compose ps
+
+# Access container shell
+docker exec -it kmm-frontend sh
+docker exec -it kmm-backend sh
+
+# Clean up everything
+docker-compose down --rmi all --volumes
 ```
 
 ---
