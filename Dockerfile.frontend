@@ -1,6 +1,9 @@
 # Multi-stage Dockerfile for Kotlin/Wasm Frontend
 FROM gradle:8.12-jdk17 AS build
 
+# Accept backend URL as build argument
+ARG BACKEND_URL=http://localhost:8081
+
 # Set working directory
 WORKDIR /app
 
@@ -14,6 +17,9 @@ COPY frontend/ frontend/
 
 # Make gradlew executable
 RUN chmod +x gradlew
+
+# Replace the backend URL in the source code
+RUN sed -i "s|PLACEHOLDER_BACKEND_URL|$BACKEND_URL|g" shared/src/commonMain/kotlin/com/kmm/shared/DummyDataModels.kt
 
 # Build the frontend application
 RUN ./gradlew :frontend:wasmJsBrowserDistribution --no-daemon

@@ -49,13 +49,24 @@ object DummyDataFactory {
  * Constants used across the application
  */
 object AppConstants {
+    // Development defaults
     const val DEFAULT_SERVER_HOST = "localhost"
     const val DEFAULT_HTTP_PORT = 8081  // Backend API port
     const val DEFAULT_FRONTEND_PORT = 8080  // Frontend development server port
     const val DEFAULT_REQUEST_TIMEOUT_MS = 5000L
     
+    // Production backend URL (will be replaced during Docker build)
+    const val PRODUCTION_BACKEND_URL = "PLACEHOLDER_BACKEND_URL"
+    
     // API endpoints
     const val API_BASE_PATH = "/api"
     const val DUMMY_DATA_ENDPOINT = "$API_BASE_PATH/dummy-data"
     const val HEALTH_ENDPOINT = "$API_BASE_PATH/health"
-} 
+}
+
+/**
+ * Platform-specific function to get the appropriate backend URL
+ * In production (WASM in browser), uses the deployed URL
+ * In development or backend (JVM), uses localhost
+ */
+expect fun getBackendUrl(): String

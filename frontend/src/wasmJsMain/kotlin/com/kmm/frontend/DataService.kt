@@ -2,6 +2,7 @@ package com.kmm.frontend
 
 import com.kmm.shared.AppConstants
 import com.kmm.shared.DummyData
+import com.kmm.shared.getBackendUrl
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.js.*
@@ -25,7 +26,7 @@ class DataService {
         }
     }
     
-    private val baseUrl = "http://${AppConstants.DEFAULT_SERVER_HOST}:${AppConstants.DEFAULT_HTTP_PORT}"
+    private val baseUrl = getBackendUrl()
     
     /**
      * Fetches dummy data from the backend

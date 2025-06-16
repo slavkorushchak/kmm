@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kmm.shared.DummyData
+import com.kmm.shared.getBackendUrl
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -19,11 +20,7 @@ sealed class UiState {
     data class Error(val message: String) : UiState()
 }
 
-// Simple constants for the app
-object AppConstants {
-    const val DEFAULT_SERVER_HOST = "localhost"
-    const val DEFAULT_HTTP_PORT = 8081
-}
+// Note: AppConstants is now imported from shared module
 
 /**
  * Main App composable for the KMP REST Web App frontend
@@ -66,7 +63,7 @@ fun App() {
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Backend: ${AppConstants.DEFAULT_SERVER_HOST}:${AppConstants.DEFAULT_HTTP_PORT}",
+                text = "Backend: ${getBackendUrl()}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -144,7 +141,7 @@ private fun AppHeader() {
         
         // Backend connection info
         Text(
-            text = "Backend: ${AppConstants.DEFAULT_SERVER_HOST}:${AppConstants.DEFAULT_HTTP_PORT}",
+            text = "Backend: ${getBackendUrl()}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
