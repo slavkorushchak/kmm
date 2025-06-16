@@ -73,3 +73,5 @@ local.properties
 *.tgz
 *.tar.gz
 .vscode-test
+gcp-config.env
+deployment-info.txt
