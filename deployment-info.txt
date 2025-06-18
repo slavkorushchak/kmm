@@ -1,6 +1,6 @@
-KMM App Deployment Information
-==============================
-Deployment Date: Mon Jun 16 16:08:41 EEST 2025
+KMM App Deployment Information (Docker Compose)
+===============================================
+Deployment Date: Mon Jun 16 16:47:25 EEST 2025
 Project ID: kmm-app-20250616-151000
 Region: us-central1
 
@@ -12,7 +12,13 @@ Images:
 - Frontend: us-central1-docker.pkg.dev/kmm-app-20250616-151000/kmm-images/kmm-frontend:latest
 - Backend: us-central1-docker.pkg.dev/kmm-app-20250616-151000/kmm-images/kmm-backend:latest
 
+Build Method: Docker Compose
+- Compose File: docker-compose.build.yml
+- Platform: linux/amd64
+- Parallel Builds: Enabled
+
 Useful Commands:
+- Rebuild all: docker-compose -f docker-compose.build.yml build
+- Rebuild frontend: docker-compose -f docker-compose.build.yml build frontend
 - View logs: gcloud run services logs read kmm-frontend --region us-central1
 - Update service: gcloud run deploy kmm-frontend --image us-central1-docker.pkg.dev/kmm-app-20250616-151000/kmm-images/kmm-frontend:latest --region us-central1
-- Delete services: gcloud run services delete kmm-frontend --region us-central1

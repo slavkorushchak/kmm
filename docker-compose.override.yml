@@ -1,0 +1,14 @@
+services:
+  backend:
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+    
+  frontend:
+    build:
+      args:
+        - BACKEND_URL=http://localhost:8081
+        - NODE_ENV=development
+    environment:
+      - NODE_ENV=development
+      - BACKEND_URL=http://backend:8081 

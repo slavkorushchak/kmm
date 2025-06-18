@@ -1,18 +1,14 @@
 package com.kmm.shared
 
 /**
- * WASM-specific implementation that can detect browser environment
+ * WASM-specific implementation that uses BuildConfig when available
  */
 actual fun getBackendUrl(): String {
     return try {
-        // In WASM, we'll use a simple approach: if production URL is set (not placeholder), use it
-        if (AppConstants.PRODUCTION_BACKEND_URL != "PLACEHOLDER_BACKEND_URL") {
-            AppConstants.PRODUCTION_BACKEND_URL
-        } else {
-            "http://${AppConstants.DEFAULT_SERVER_HOST}:${AppConstants.DEFAULT_HTTP_PORT}"
-        }
+        // Try to use BuildConfig (available in production builds)
+        BuildConfig.getBackendUrl()
     } catch (e: Exception) {
-        // Fallback to localhost
+        // Fallback to localhost for development
         "http://${AppConstants.DEFAULT_SERVER_HOST}:${AppConstants.DEFAULT_HTTP_PORT}"
     }
 } 

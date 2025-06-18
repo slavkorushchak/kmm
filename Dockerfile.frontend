@@ -18,8 +18,24 @@ COPY frontend/ frontend/
 # Make gradlew executable
 RUN chmod +x gradlew
 
-# Replace the backend URL in the source code
-RUN sed -i "s|PLACEHOLDER_BACKEND_URL|$BACKEND_URL|g" shared/src/commonMain/kotlin/com/kmm/shared/DummyDataModels.kt
+# Generate build-time configuration
+RUN echo "package com.kmm.shared" > shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "/**" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo " * Build-time configuration generated during Docker build" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo " * Contains environment-specific values injected at build time" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo " */" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "object BuildConfig {" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    const val BACKEND_URL = \"$BACKEND_URL\"" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    const val NODE_ENV = \"production\"" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    const val BUILD_TIME = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    const val VERSION = \"1.0.0\"" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    /**" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "     * Gets the appropriate backend URL for the current build" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "     */" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "    fun getBackendUrl(): String = BACKEND_URL" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
+    echo "}" >> shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt
 
 # Build the frontend application
 RUN ./gradlew :frontend:wasmJsBrowserDistribution --no-daemon

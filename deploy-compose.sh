@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# GCP Cloud Run Deployment Script for KMM App
+# GCP Deployment with Docker Compose Build
 set -e
 
 # Colors for output
@@ -28,7 +28,7 @@ print_header() {
     echo -e "${BLUE}========================================${NC}"
 }
 
-print_header "🚀 Deploying KMM App to Google Cloud Run"
+print_header "🚀 Deploying KMM App to GCP with Docker Compose"
 
 # Load configuration
 if [ -f "gcp-config.env" ]; then
@@ -46,25 +46,20 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Verify gcloud authentication
-if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | head -n 1 > /dev/null; then
-    print_error "Not authenticated with gcloud. Please run 'gcloud auth login'"
-    exit 1
-fi
-
 # Image names
 BACKEND_IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/kmm-backend"
 FRONTEND_IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/kmm-frontend"
 
-print_header "🔨 Step 1: Building and Pushing Backend"
+print_header "🔨 Step 1: Build and Deploy Backend"
 
-print_status "Building backend image..."
-docker build --platform linux/amd64 -f Dockerfile.backend -t kmm-backend .
+# Set environment variables for Docker Compose
+export BACKEND_IMAGE
+export NODE_ENV=production
 
-print_status "Tagging backend image..."
-docker tag kmm-backend:latest $BACKEND_IMAGE:latest
+print_status "Building backend with Docker Compose..."
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml build backend
 
-print_status "Pushing backend image to Artifact Registry..."
+print_status "Pushing backend image..."
 docker push $BACKEND_IMAGE:latest
 
 print_status "Deploying backend to Cloud Run..."
@@ -83,15 +78,16 @@ gcloud run deploy kmm-backend \
 BACKEND_URL=$(gcloud run services describe kmm-backend --platform managed --region $REGION --format 'value(status.url)')
 print_status "Backend deployed at: $BACKEND_URL"
 
-print_header "🎨 Step 2: Building and Pushing Frontend"
+print_header "🎨 Step 2: Build and Deploy Frontend"
 
-print_status "Building frontend image with backend URL: $BACKEND_URL"
-docker build --platform linux/amd64 --build-arg BACKEND_URL="$BACKEND_URL" -f Dockerfile.frontend -t kmm-frontend .
+# Set environment variables for frontend build
+export FRONTEND_IMAGE
+export BACKEND_URL
 
-print_status "Tagging frontend image..."
-docker tag kmm-frontend:latest $FRONTEND_IMAGE:latest
+print_status "Building frontend with Docker Compose and backend URL: $BACKEND_URL"
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
 
-print_status "Pushing frontend image to Artifact Registry..."
+print_status "Pushing frontend image..."
 docker push $FRONTEND_IMAGE:latest
 
 print_status "Deploying frontend to Cloud Run..."
@@ -112,7 +108,7 @@ FRONTEND_URL=$(gcloud run services describe kmm-frontend --platform managed --re
 print_header "✅ Deployment Complete!"
 
 echo ""
-echo "🎉 Your KMM App has been deployed successfully!"
+echo "🎉 Your KMM App has been deployed successfully using Docker Compose!"
 echo ""
 echo "📱 Frontend URL: $FRONTEND_URL"
 echo "🔧 Backend URL:  $BACKEND_URL"
@@ -129,8 +125,8 @@ echo ""
 
 # Save deployment info
 cat > deployment-info.txt << EOF
-KMM App Deployment Information
-==============================
+KMM App Deployment Information (Docker Compose)
+===============================================
 Deployment Date: $(date)
 Project ID: $PROJECT_ID
 Region: $REGION
@@ -143,10 +139,23 @@ Images:
 - Frontend: $FRONTEND_IMAGE:latest
 - Backend: $BACKEND_IMAGE:latest
 
+Build Method: Standard Docker Compose Pattern
+- Base: docker-compose.yml
+- Development: docker-compose.override.yml (auto-loaded)
+- Production: docker-compose.prod.yml (explicit)
+- Platform: linux/amd64
+- Parallel Builds: Enabled
+
 Useful Commands:
+- Rebuild all: docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
+- Rebuild frontend: docker-compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
+- Local development: docker-compose up (auto-loads override.yml)
 - View logs: gcloud run services logs read kmm-frontend --region $REGION
 - Update service: gcloud run deploy kmm-frontend --image $FRONTEND_IMAGE:latest --region $REGION
-- Delete services: gcloud run services delete kmm-frontend --region $REGION
 EOF
 
-print_status "Deployment info saved to deployment-info.txt" 
+print_status "Deployment info saved to deployment-info.txt"
+
+# Clean up build containers
+print_status "Cleaning up build containers..."
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 

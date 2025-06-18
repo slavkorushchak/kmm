@@ -55,8 +55,7 @@ object AppConstants {
     const val DEFAULT_FRONTEND_PORT = 8080  // Frontend development server port
     const val DEFAULT_REQUEST_TIMEOUT_MS = 5000L
     
-    // Production backend URL (will be replaced during Docker build)
-    const val PRODUCTION_BACKEND_URL = "PLACEHOLDER_BACKEND_URL"
+    // Note: Production backend URL is now in BuildConfig (generated at build time)
     
     // API endpoints
     const val API_BASE_PATH = "/api"
