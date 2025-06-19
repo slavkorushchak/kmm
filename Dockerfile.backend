@@ -12,11 +12,12 @@ COPY gradlew gradlew.bat gradle.properties settings.gradle.kts build.gradle.kts 
 COPY shared/ shared/
 COPY backend/ backend/
 
-# Make gradlew executable
-RUN chmod +x gradlew
+# Make gradlew executable and ensure wrapper is properly set up
+RUN chmod +x gradlew && \
+    ./gradlew wrapper --gradle-version 8.12 --distribution-type bin
 
 # Build the backend distribution
-RUN ./gradlew :backend:installDist --no-daemon
+RUN ./gradlew clean :backend:installDist --no-daemon --stacktrace
 
 # Production stage
 FROM eclipse-temurin:17-jre
