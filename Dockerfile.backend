@@ -12,11 +12,11 @@ COPY gradlew gradlew.bat gradle.properties settings.gradle.kts build.gradle.kts 
 COPY shared/ shared/
 COPY backend/ backend/
 
-# Make gradlew executable and ensure wrapper is properly set up
-RUN chmod +x gradlew && \
-    ./gradlew wrapper --gradle-version 8.12 --distribution-type bin
+# Use gradle from base image instead of wrapper
+RUN gradle wrapper --gradle-version 8.12 --distribution-type bin && \
+    chmod +x gradlew
 
-# Build the backend distribution
+# Build the backend distribution  
 RUN ./gradlew clean :backend:installDist --no-daemon --stacktrace
 
 # Production stage
