@@ -38,17 +38,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Check GCP configuration
+      run: |
+        if [ -f "gcp-config.env" ] && [ -n "${{ secrets.GCP_PROJECT_ID }}" ]; then
+          echo "GCP_CONFIGURED=true" >> $GITHUB_ENV
+        else
+          echo "GCP_CONFIGURED=false" >> $GITHUB_ENV
+          echo "⚠️ GCP not configured. Skipping deployment."
+          echo "To enable deployment:"
+          echo "1. Run ./setup-gcp.sh locally"
+          echo "2. Add GCP_PROJECT_ID to GitHub repository secrets"
+          echo "3. Configure GCP service account for GitHub Actions"
+        fi
+    
     - name: Set up Docker Buildx
+      if: env.GCP_CONFIGURED == 'true'
       uses: docker/setup-buildx-action@v3
       
     - name: Make deployment script executable
+      if: env.GCP_CONFIGURED == 'true'
       run: chmod +x deploy-compose.sh
       
     - name: Deploy to production
+      if: env.GCP_CONFIGURED == 'true'
       run: ./deploy-compose.sh
       env:
         DOCKER_BUILDKIT: 1
         COMPOSE_DOCKER_CLI_BUILD: 1
       
     - name: Deployment success notification
-      run: echo "✅ Deployment completed successfully!" 
+      if: env.GCP_CONFIGURED == 'true'
+      run: echo "✅ Deployment completed successfully!"
+      
+    - name: Deployment skipped notification
+      if: env.GCP_CONFIGURED == 'false'
+      run: echo "📦 Build completed! Deployment skipped (GCP not configured)" 
