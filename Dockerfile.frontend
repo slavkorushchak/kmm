@@ -15,9 +15,9 @@ COPY gradlew gradlew.bat gradle.properties settings.gradle.kts build.gradle.kts 
 COPY shared/ shared/
 COPY frontend/ frontend/
 
-# Make gradlew executable and ensure wrapper is properly set up
-RUN chmod +x gradlew && \
-    ./gradlew wrapper --gradle-version 8.12 --distribution-type bin
+# Use gradle from base image instead of wrapper
+RUN gradle wrapper --gradle-version 8.12 --distribution-type bin && \
+    chmod +x gradlew
 
 # Generate build-time configuration
 RUN echo "package com.kmm.shared" > shared/src/commonMain/kotlin/com/kmm/shared/BuildConfig.kt && \
