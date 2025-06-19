@@ -76,3 +76,4 @@ local.properties
 gcp-config.env
 deployment-info.txt
 github-actions-key.json
+github-secrets.txt
