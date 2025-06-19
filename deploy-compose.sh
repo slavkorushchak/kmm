@@ -57,7 +57,7 @@ export BACKEND_IMAGE
 export NODE_ENV=production
 
 print_status "Building backend with Docker Compose..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build backend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build backend
 
 print_status "Pushing backend image..."
 docker push $BACKEND_IMAGE:latest
@@ -85,7 +85,7 @@ export FRONTEND_IMAGE
 export BACKEND_URL
 
 print_status "Building frontend with Docker Compose and backend URL: $BACKEND_URL"
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
 
 print_status "Pushing frontend image..."
 docker push $FRONTEND_IMAGE:latest
@@ -147,9 +147,9 @@ Build Method: Standard Docker Compose Pattern
 - Parallel Builds: Enabled
 
 Useful Commands:
-- Rebuild all: docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
-- Rebuild frontend: docker-compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
-- Local development: docker-compose up (auto-loads override.yml)
+- Rebuild all: docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+- Rebuild frontend: docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
+- Local development: docker compose up (auto-loads override.yml)
 - View logs: gcloud run services logs read kmm-frontend --region $REGION
 - Update service: gcloud run deploy kmm-frontend --image $FRONTEND_IMAGE:latest --region $REGION
 EOF
@@ -158,4 +158,4 @@ print_status "Deployment info saved to deployment-info.txt"
 
 # Clean up build containers
 print_status "Cleaning up build containers..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans 
