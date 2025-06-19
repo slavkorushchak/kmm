@@ -75,3 +75,4 @@ local.properties
 .vscode-test
 gcp-config.env
 deployment-info.txt
+github-actions-key.json
