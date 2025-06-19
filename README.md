@@ -4,7 +4,13 @@
 
 This project is a Kotlin Multiplatform (KMP) application that demonstrates the integration of a WebAssembly-based frontend with a REST API backend using shared Kotlin code. The frontend contains a single button labeled **Fetch Data**. When clicked, it sends a REST request to the backend, which responds with dummy data. The data is then rendered in the UI using Material3 design components.
 
-**🚀 Current Status:** Backend and Frontend fully implemented and operational! Both services running successfully with complete build pipeline and REST API integration.
+**🚀 Current Status:** Backend and Frontend fully implemented and operational! Both services running successfully with complete build pipeline, REST API integration, and automated GCP deployment via GitHub Actions.
+
+### 🔗 **Quick Links**
+- **📚 Local Development**: [Quick Start](#quick-start)
+- **🚀 CI/CD & Deployment**: [Automated Deployment](#-cicd--deployment)  
+- **🐳 Docker**: [Container Configuration](#-docker-configuration)
+- **📊 API**: [REST Endpoints](#api-endpoints)
 
 ---
 
@@ -161,6 +167,96 @@ services:
 - **Health checks** and container monitoring
 - **Optimized nginx** configuration with caching
 - **Build optimization** with `.dockerignore`
+
+---
+
+## 🚀 CI/CD & Deployment
+
+This project features a complete automated deployment pipeline using GitHub Actions and Google Cloud Platform.
+
+### Automated CI/CD Pipeline
+
+#### 🔄 **Continuous Deployment**
+- **Trigger**: Every push to `main` branch
+- **Workflow**: `.github/workflows/build-and-deploy.yml`
+- **Process**:
+  1. **Build**: Compiles Kotlin/JVM backend and Kotlin/Wasm frontend
+  2. **Containerize**: Creates Docker images using multi-stage builds
+  3. **Deploy**: Pushes to Google Artifact Registry and deploys to Cloud Run
+
+#### 🧹 **Manual Cleanup**
+- **Trigger**: Manual dispatch via GitHub Actions UI
+- **Workflow**: `.github/workflows/cleanup.yml`
+- **Purpose**: Stop and remove GCP services to reduce costs
+- **Safety**: Requires typing "DELETE" to confirm
+
+### GCP Infrastructure
+
+#### **Cloud Run Services**
+- **Frontend**: `kmm-frontend` - Serves Kotlin/Wasm application via nginx
+- **Backend**: `kmm-backend` - Hosts Ktor REST API server
+- **Region**: `us-central1` (configurable)
+- **Scaling**: Automatic scaling based on traffic
+
+#### **Artifact Registry**
+- **Repository**: `kmm-images`
+- **Images**: Stores Docker images for both frontend and backend
+- **Cleanup**: Optional automated cleanup via manual workflow
+
+### Deployment Configuration
+
+#### **Required GitHub Secrets**
+```
+GCP_PROJECT_ID    # Your GCP project ID
+GCP_REGION        # Deployment region (e.g., us-central1)
+GCP_REPOSITORY    # Artifact Registry repository name
+GCP_SA_KEY        # Service account key JSON
+```
+
+#### **Setup Scripts**
+- **`setup-gcp.sh`**: Configures GCP services and generates local config
+- **`setup-github-gcp.sh`**: Creates service account and provides GitHub secrets
+- **`validate-github-secrets.sh`**: Verifies GitHub secrets configuration
+
+### Deployment Features
+
+✅ **Zero-downtime deployment** with Cloud Run  
+✅ **Automatic HTTPS** with managed certificates  
+✅ **Container health checks** and monitoring  
+✅ **Horizontal autoscaling** based on CPU/memory  
+✅ **CORS configuration** for cross-origin requests  
+✅ **Cost optimization** with manual cleanup workflow  
+
+### Local vs Production
+
+| Feature | Local Development | Production (GCP) |
+|---------|-------------------|------------------|
+| **Frontend** | webpack-dev-server:8080 | Cloud Run with nginx |
+| **Backend** | Ktor embedded:8081 | Cloud Run with optimized JRE |
+| **Database** | In-memory dummy data | In-memory dummy data |
+| **HTTPS** | HTTP only | Automatic HTTPS |
+| **Scaling** | Single instance | Auto-scaling |
+| **Monitoring** | Local logs | Cloud Logging |
+
+### Cost Management
+
+#### **Cost-Saving Features**
+- **Manual cleanup workflow** to stop services when not needed
+- **Optimized container images** with multi-stage builds
+- **Cloud Run pricing** - pay only for actual usage
+- **Automatic scaling to zero** when no traffic
+
+#### **Using the Cleanup Workflow**
+1. Go to **Actions** tab in GitHub
+2. Select **"Manual Cleanup - Stop & Remove GCP Services"**
+3. Click **"Run workflow"**
+4. Type **"DELETE"** in confirmation field
+5. Choose cleanup level:
+   - `services_only` - Remove Cloud Run services only
+   - `services_and_images` - Remove services + Docker images
+6. Click **"Run workflow"**
+
+**💡 To redeploy:** Simply push to main branch - full automation will recreate everything!
 
 ---
 

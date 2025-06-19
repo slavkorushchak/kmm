@@ -1,0 +1,170 @@
+name: Manual Cleanup - Stop & Remove GCP Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_level:
+        description: 'Choose cleanup level'
+        required: true
+        default: 'services_only'
+        type: choice
+        options:
+        - 'services_only'
+        - 'services_and_images'
+        - 'confirm_all'
+      confirm_deletion:
+        description: 'Type "DELETE" to confirm removal of services'
+        required: true
+        type: string
+
+jobs:
+  cleanup:
+    name: Cleanup GCP Resources
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_deletion == 'DELETE'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate cleanup confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm_deletion }}" != "DELETE" ]; then
+          echo "❌ Cleanup cancelled: confirmation not provided"
+          echo "To confirm cleanup, type 'DELETE' in the confirmation field"
+          exit 1
+        fi
+        echo "✅ Cleanup confirmed by user: ${{ github.actor }}"
+      
+    - name: Check GCP configuration
+      run: |
+        if [ -n "${{ secrets.GCP_PROJECT_ID }}" ] && [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
+          echo "GCP_CONFIGURED=true" >> $GITHUB_ENV
+        else
+          echo "GCP_CONFIGURED=false" >> $GITHUB_ENV
+          echo "❌ GCP not configured. Cannot proceed with cleanup."
+          exit 1
+        fi
+    
+    - name: Authenticate to Google Cloud
+      if: env.GCP_CONFIGURED == 'true'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      if: env.GCP_CONFIGURED == 'true'
+      uses: google-github-actions/setup-gcloud@v2
+      
+    - name: List current Cloud Run services
+      if: env.GCP_CONFIGURED == 'true'
+      run: |
+        echo "📋 Current Cloud Run services in project ${{ secrets.GCP_PROJECT_ID }}:"
+        gcloud run services list --region=${{ secrets.GCP_REGION }} --format="table(name,status.url,status.conditions[0].type)" || echo "No services found"
+      
+    - name: Stop and delete backend service
+      if: env.GCP_CONFIGURED == 'true'
+      run: |
+        echo "🔄 Checking for kmm-backend service..."
+        if gcloud run services describe kmm-backend --region=${{ secrets.GCP_REGION }} --format="value(metadata.name)" 2>/dev/null; then
+          echo "🗑️ Deleting kmm-backend service..."
+          gcloud run services delete kmm-backend \
+            --region=${{ secrets.GCP_REGION }} \
+            --quiet
+          echo "✅ Backend service deleted"
+        else
+          echo "ℹ️ Backend service not found (already deleted or never deployed)"
+        fi
+      
+    - name: Stop and delete frontend service
+      if: env.GCP_CONFIGURED == 'true'
+      run: |
+        echo "🔄 Checking for kmm-frontend service..."
+        if gcloud run services describe kmm-frontend --region=${{ secrets.GCP_REGION }} --format="value(metadata.name)" 2>/dev/null; then
+          echo "🗑️ Deleting kmm-frontend service..."
+          gcloud run services delete kmm-frontend \
+            --region=${{ secrets.GCP_REGION }} \
+            --quiet
+          echo "✅ Frontend service deleted"
+        else
+          echo "ℹ️ Frontend service not found (already deleted or never deployed)"
+        fi
+      
+    - name: Cleanup Docker images (optional)
+      if: env.GCP_CONFIGURED == 'true' && (github.event.inputs.cleanup_level == 'services_and_images' || github.event.inputs.cleanup_level == 'confirm_all')
+      run: |
+        echo "🔄 Cleaning up Docker images from Artifact Registry..."
+        
+        # List and delete backend images
+        echo "🗑️ Cleaning backend images..."
+        gcloud artifacts docker images list ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/kmm-backend --format="value(package)" --limit=50 2>/dev/null | while read image; do
+          if [ -n "$image" ]; then
+            echo "Deleting image: $image"
+            gcloud artifacts docker images delete "$image" --quiet 2>/dev/null || echo "Failed to delete $image"
+          fi
+        done || echo "No backend images found"
+        
+        # List and delete frontend images  
+        echo "🗑️ Cleaning frontend images..."
+        gcloud artifacts docker images list ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/kmm-frontend --format="value(package)" --limit=50 2>/dev/null | while read image; do
+          if [ -n "$image" ]; then
+            echo "Deleting image: $image"
+            gcloud artifacts docker images delete "$image" --quiet 2>/dev/null || echo "Failed to delete $image"
+          fi
+        done || echo "No frontend images found"
+        
+        echo "✅ Docker images cleanup completed"
+      
+    - name: Verify cleanup
+      if: env.GCP_CONFIGURED == 'true'
+      run: |
+        echo "🔍 Verifying cleanup..."
+        echo ""
+        echo "📋 Remaining Cloud Run services:"
+        gcloud run services list --region=${{ secrets.GCP_REGION }} --format="table(name,status.url,status.conditions[0].type)" || echo "No services found"
+        echo ""
+        echo "📊 Artifact Registry images (first 10):"
+        gcloud artifacts docker images list ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }} --limit=10 --format="table(package,createTime)" 2>/dev/null || echo "No images found"
+      
+    - name: Cleanup summary
+      if: env.GCP_CONFIGURED == 'true'
+      run: |
+        echo "🎉 Cleanup completed successfully!"
+        echo ""
+        echo "📋 What was cleaned up:"
+        echo "   ✅ kmm-backend Cloud Run service (if existed)"
+        echo "   ✅ kmm-frontend Cloud Run service (if existed)"
+        if [ "${{ github.event.inputs.cleanup_level }}" = "services_and_images" ] || [ "${{ github.event.inputs.cleanup_level }}" = "confirm_all" ]; then
+          echo "   ✅ Docker images from Artifact Registry"
+        fi
+        echo ""
+        echo "💰 This should significantly reduce your GCP costs!"
+        echo "🚀 To redeploy, simply push to main branch"
+        echo ""
+        echo "🔗 Monitor remaining resources:"
+        echo "   • Cloud Run: https://console.cloud.google.com/run?project=${{ secrets.GCP_PROJECT_ID }}"
+        echo "   • Artifact Registry: https://console.cloud.google.com/artifacts/docker/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REGION }}/${{ secrets.GCP_REPOSITORY }}"
+
+  cleanup-cancelled:
+    name: Cleanup Cancelled
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_deletion != 'DELETE'
+    
+    steps:
+    - name: Show cancellation message
+      run: |
+        echo "❌ Cleanup was cancelled"
+        echo ""
+        echo "To proceed with cleanup, you must:"
+        echo "1. Go to Actions tab"
+        echo "2. Click 'Manual Cleanup - Stop & Remove GCP Services'"
+        echo "3. Click 'Run workflow'"
+        echo "4. Type 'DELETE' exactly in the confirmation field"
+        echo "5. Choose your cleanup level"
+        echo ""
+        echo "⚠️  This action is irreversible and will:"
+        echo "   • Delete kmm-backend Cloud Run service"
+        echo "   • Delete kmm-frontend Cloud Run service"
+        echo "   • Optionally delete Docker images"
+        echo ""
+        echo "💡 Your application will be offline until redeployed" 
